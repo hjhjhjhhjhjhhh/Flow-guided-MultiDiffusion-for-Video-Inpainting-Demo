@@ -1,6 +1,6 @@
 ## Get Started
-
-Install Model and Demo Dependencies
+Install Model Dependencies same as [Medm](https://github.com/aiiu-lab/MeDM)
+Install Demo Dependencies
 ```shell
 cd web-demos/hugging_face
 
@@ -35,8 +35,7 @@ python app.py
    2. Then click `Inpainting` to get the inpainting results.
    ![Step 4](./assets/step4.png)
 
-*You can always refer to the `Highlighted Text` box on the page for guidance on the next step!*
-
+    ⚠️ **Warning!**  You can only use upload image as mask when selecting *watermark_removal(upload mask)* , and can only draw a mask when selecting *watermark_removal(draw mask)*
 
 ## License
 
