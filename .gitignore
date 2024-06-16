@@ -1,0 +1,10 @@
+__pycache__/
+.vscode/
+docs/
+debug_images/
+images/
+result/
+vots/
+weights/
+vots.py
+test*.py
