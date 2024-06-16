@@ -1,5 +1,5 @@
 ## Get Started
-Install Model Dependencies same as [Medm](https://github.com/aiiu-lab/MeDM)
+Install Model Dependencies same as [Medm](https://github.com/aiiu-lab/MeDM)<br>
 Install Demo Dependencies
 ```shell
 cd web-demos/hugging_face
