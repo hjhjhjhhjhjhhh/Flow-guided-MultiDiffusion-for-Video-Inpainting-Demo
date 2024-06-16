@@ -12,6 +12,7 @@ import torch
 import torchvision
 import numpy as np
 import gradio as gr
+from PIL import Image
 
 from tools.painter import mask_painter
 from track_anything import TrackingAnything
@@ -106,13 +107,13 @@ def get_frames_from_video(video_input, video_state, task_type):
                             gr.update(visible=True), gr.update(visible=True, choices=[], value=[]), \
                             gr.update(visible=True, value=operation_log), gr.update(visible=True, value=operation_log)
     return video_state, video_info, video_state["origin_images"][0], video_state["origin_images"][0], gr.update(visible=True, maximum=len(frames), value=1), gr.update(visible=True, maximum=len(frames), value=len(frames)), \
-                        gr.update(visible=True), gr.update(visible=True), \
+                        gr.update(visible=True), gr.update(visible=False), \
                         gr.update(visible=True), gr.update(visible=False), \
                         gr.update(visible=True),\
                         gr.update(visible=True), gr.update(visible=True), \
                         gr.update(visible=True), gr.update(visible=True), \
                         gr.update(visible=True), gr.update(visible=True), \
-                        gr.update(visible=True), gr.update(visible=True, choices=[], value=[]), \
+                        gr.update(visible=True), gr.update(visible=False, choices=[], value=[]), \
                         gr.update(visible=True, value=operation_log), gr.update(visible=True, value=operation_log)
     
 
@@ -176,28 +177,42 @@ def sam_refine(video_state, point_prompt, click_state, interactive_state, evt:gr
     return painted_image, video_state, interactive_state, operation_log, operation_log
 
 def add_multi_mask(video_state, interactive_state, mask_dropdown, task_type, mask_frame):
+    temp_save = mask_frame
+    if task_type == 'object_removal':
+        try:
+            mask = video_state["masks"][video_state["select_frame_number"]]
+            interactive_state["multi_mask"]["masks"].append(mask)
+            interactive_state["multi_mask"]["mask_names"].append("mask_{:03d}".format(len(interactive_state["multi_mask"]["masks"])))
+            mask_dropdown.append("mask_{:03d}".format(len(interactive_state["multi_mask"]["masks"])))
+            select_frame, _, _ = show_mask(video_state, interactive_state, mask_dropdown)
+            print("type select frame ", type(select_frame))
+            print(select_frame.shape)
+            
+            operation_log = [("",""),("Added a mask, use the mask select for target tracking or inpainting.","Normal")]
+        except:
+            operation_log = [("Please click the image in step2 to generate masks.", "Error"), ("","")]
+        return interactive_state, gr.update(choices=interactive_state["multi_mask"]["mask_names"], value=mask_dropdown), select_frame, [[],[]], operation_log, operation_log, None, temp_save
+    
     try:
         mask = video_state["masks"][video_state["select_frame_number"]]
         interactive_state["multi_mask"]["masks"].append(mask)
         interactive_state["multi_mask"]["mask_names"].append("mask_{:03d}".format(len(interactive_state["multi_mask"]["masks"])))
         mask_dropdown.append("mask_{:03d}".format(len(interactive_state["multi_mask"]["masks"])))
-        select_frame, _, _ = show_mask(video_state, interactive_state, mask_dropdown)
         operation_log = [("",""),("Added a mask, use the mask select for target tracking or inpainting.","Normal")]
+        threshold = 0
+        mask_output = np.asarray(mask_frame['layers'][0])
+        if task_type == "watermark_removal(upload mask)":
+            mask_output = np.asarray(mask_frame['background'])
+        binary_mask = (mask_output[:, :, 2] > threshold).astype(np.uint8)
+        mask_frame['layers'][0] = binary_mask
+        mask_expand = np.expand_dims(binary_mask, axis=-1)
+        mask_frame['composite'] = mask_frame['background'] * (1 - mask_expand)
+        select_frame = Image.fromarray(mask_frame['composite']).convert('RGB')
+        select_frame = np.array(select_frame)
+
+        return interactive_state, gr.update(choices=interactive_state["multi_mask"]["mask_names"], value=mask_dropdown), select_frame, [[],[]], operation_log, operation_log, binary_mask * 255, temp_save
     except:
         operation_log = [("Please click the image in step2 to generate masks.", "Error"), ("","")]
-    if task_type == 'object_removal':
-        return interactive_state, gr.update(choices=interactive_state["multi_mask"]["mask_names"], value=mask_dropdown), select_frame, [[],[]], operation_log, operation_log, None
-    
-    threshold = 0
-    mask_output = np.asarray(mask_frame['layers'][0])
-    if task_type == "watermark_removal(upload mask)":
-        mask_output = np.asarray(mask_frame['background'])
-    binary_mask = (mask_output[:, :, 2] > threshold).astype(np.uint8)
-    mask_frame['layers'][0] = binary_mask
-    mask_expand = np.expand_dims(binary_mask, axis=-1)
-    mask_frame['composite'] = mask_frame['background'] * (1 - mask_expand)
-
-    return interactive_state, gr.update(choices=interactive_state["multi_mask"]["mask_names"], value=mask_dropdown), select_frame, [[],[]], operation_log, operation_log, binary_mask * 255
 
 def clear_click(video_state, click_state):
     click_state = [[],[]]
@@ -205,12 +220,22 @@ def clear_click(video_state, click_state):
     operation_log = [("",""), ("Cleared points history and refresh the image.","Normal")]
     return template_frame, click_state, operation_log, operation_log
 
-def remove_multi_mask(interactive_state, mask_dropdown):
-    interactive_state["multi_mask"]["mask_names"]= []
-    interactive_state["multi_mask"]["masks"] = []
+def remove_multi_mask(interactive_state, mask_dropdown, temp_save, template_frame1):
+    temp_save['composite'] = temp_save['background']
+    template_frame1['layers'][0] = Image.new('RGBA', template_frame1['layers'][0].size, (0, 0, 0, 0))
+    temp_save['layers'][0] = Image.new('RGBA', temp_save['layers'][0].size, (0, 0, 0, 0))
+    template_frame1['composite'] = temp_save['composite']
+    # temp_save['background'].save('background.png')
+    # temp_save['layers'][0].save('layers.png')
+    # temp_save['composite'].save('composite.png')
+    # template_frame1['background'].save('background1.png')
+    # template_frame1['layers'][0].save('layers1.png')
+    # template_frame1['composite'].save('composite1.png')
+    # interactive_state["multi_mask"]["mask_names"]= []
+    # interactive_state["multi_mask"]["masks"] = []
 
     operation_log = [("",""), ("Remove all masks. Try to add new masks","Normal")]
-    return interactive_state, gr.update(choices=[],value=[]), operation_log, operation_log
+    return interactive_state, gr.update(choices=[],value=[]), operation_log, operation_log, temp_save
 
 def show_mask(video_state, interactive_state, mask_dropdown):
     mask_dropdown.sort()
@@ -400,7 +425,8 @@ description = r"""
 article = r"""
 ---
 📝 **Thanks**
-Our demo code is modify from <a href='https://github.com/sczhou/ProPainter' target='_blank' style='color: white;'>Propainter</a>. We greatly appreciate their work.
+<br>
+Our demo code is modified from <a href='https://github.com/sczhou/ProPainter' target='_blank' style='color: white;'>Propainter</a>. We greatly appreciate their work.
 
 📋 **License**
 <br>
@@ -483,6 +509,7 @@ with gr.Blocks(theme=gr.themes.Monochrome(), css=css) as iface:
             with gr.Column(scale=2):
                 template_frame = gr.Image(type="pil",interactive=True, elem_id="template_frame", visible=False, elem_classes="image")
                 template_frame1 = gr.ImageEditor(type="pil",interactive=True, elem_id="template_frame", visible=False)
+                temp_save = gr.ImageEditor(type="pil",interactive=True, elem_id="template_frame", visible=False)
                 draw_or_upload_mask = gr.Image(type='pil', visible=False)
                 image_selection_slider = gr.Slider(minimum=1, maximum=100, step=1, value=1, label="Track start frame", visible=False)
                 track_pause_number_slider = gr.Slider(minimum=1, maximum=100, step=1, value=1, label="Track end frame", visible=False)
@@ -551,13 +578,13 @@ with gr.Blocks(theme=gr.themes.Monochrome(), css=css) as iface:
     Add_mask_button.click(
         fn=add_multi_mask,
         inputs=[video_state, interactive_state, mask_dropdown, task_type, template_frame1],
-        outputs=[interactive_state, mask_dropdown, template_frame, click_state, run_status, run_status2, draw_or_upload_mask]
+        outputs=[interactive_state, mask_dropdown, template_frame, click_state, run_status, run_status2, draw_or_upload_mask, temp_save]
     )
 
     remove_mask_button.click(
         fn=remove_multi_mask,
-        inputs=[interactive_state, mask_dropdown],
-        outputs=[interactive_state, mask_dropdown, run_status, run_status2]
+        inputs=[interactive_state, mask_dropdown, temp_save, template_frame1],
+        outputs=[interactive_state, mask_dropdown, run_status, run_status2, template_frame1]
     )
 
     # tracking video from select image and mask

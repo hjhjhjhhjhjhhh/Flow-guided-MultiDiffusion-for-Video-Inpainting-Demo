@@ -135,6 +135,8 @@ def point_painter(input_image, input_points, point_color=5, point_alpha=0.9, poi
 	return painted_image
 
 def mask_painter(input_image, input_mask, mask_color=5, mask_alpha=0.7, contour_color=1, contour_width=3):
+	if np.ndim(input_mask) == 3:
+		input_mask = input_mask[:, :, 0]
 	assert input_image.shape[:2] == input_mask.shape, 'different shape between image and mask'
 	# 0: background, 1: foreground
 	mask = np.clip(input_mask, 0, 1)
