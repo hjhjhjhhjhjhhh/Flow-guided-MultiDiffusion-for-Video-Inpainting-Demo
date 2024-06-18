@@ -1,5 +1,5 @@
 ## Get Started
-Install Model Dependencies same as [Medm](https://github.com/aiiu-lab/MeDM)<br>
+Install Model Dependencies same as [MeDM](https://github.com/aiiu-lab/MeDM)<br>
 Install Demo Dependencies
 ```shell
 cd web-demos/hugging_face
@@ -44,5 +44,4 @@ This project is licensed under [NTU S-Lab License 1.0](https://github.com/sczhou
 
 ## Acknowledgements
 
-The project harnesses the capabilities from [Propainter](https://github.com/sczhou/ProPainter), [Track Anything](https://github.com/gaomingqi/Track-Anything), 
-[Segment Anything](https://github.com/facebookresearch/segment-anything) and [Cutie](https://github.com/hkchengrex/Cutie). Thanks for their awesome works.
+The project harnesses the capabilities from [MeDM](https://github.com/aiiu-lab/MeDM), [Propainter](https://github.com/sczhou/ProPainter), [Track Anything](https://github.com/gaomingqi/Track-Anything), [Segment Anything](https://github.com/facebookresearch/segment-anything) and [Cutie](https://github.com/hkchengrex/Cutie). Thanks for their awesome works.

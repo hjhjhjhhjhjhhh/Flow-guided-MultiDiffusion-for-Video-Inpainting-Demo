@@ -426,7 +426,7 @@ article = r"""
 ---
 📝 **Thanks**
 <br>
-Our demo code is modified from <a href='https://github.com/sczhou/ProPainter' target='_blank' style='color: white;'>Propainter</a>. We greatly appreciate their work.
+Our demo code is modified from <a href='https://github.com/sczhou/ProPainter' target='_blank' style='color: white;'>Propainter</a> and <a href='https://github.com/aiiu-lab/MeDM' target='_blank' style='color: white;'>MeDM</a>. We greatly appreciate their work.
 
 📋 **License**
 <br>
